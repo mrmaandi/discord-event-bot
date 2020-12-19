@@ -1,6 +1,6 @@
 package com.planetsf.discordsampleflipbot.bot.config
 
-import com.planetsf.discordsampleflipbot.bot.events.EventListener
+import com.planetsf.discordsampleflipbot.bot.eventlistener.EventListener
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.Event

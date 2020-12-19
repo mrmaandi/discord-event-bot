@@ -1,4 +1,4 @@
-package com.planetsf.discordsampleflipbot.calendar
+package com.planetsf.discordsampleflipbot.calendar.service
 
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
@@ -15,9 +15,16 @@ import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.calendar.model.Event
 import com.google.api.services.calendar.model.Events
+import com.planetsf.discordsampleflipbot.calendar.model.CalendarEvent
 import org.springframework.stereotype.Service
 import java.io.*
 import java.util.Collections.singletonList
+import java.text.SimpleDateFormat
+
+import java.text.DateFormat
+
+
+
 
 @Service
 class CalendarService {
@@ -36,7 +43,7 @@ class CalendarService {
             .setApplicationName(APPLICATION_NAME)
             .build()
 
-        // List the next 10 events from the primary calendar.
+        // List the next 10 events
         val now = DateTime(System.currentTimeMillis())
         val events: Events = service.events().list("2pr0jjacf8dejccjog57cjc71s@group.calendar.google.com")
             .setMaxResults(10)
@@ -44,21 +51,21 @@ class CalendarService {
             .setOrderBy("startTime")
             .setSingleEvents(true)
             .execute()
-        val items: List<Event> = events.getItems()
+        val items: List<Event> = events.items
         if (items.isEmpty()) {
             println("No upcoming events found.")
         } else {
             println("Upcoming events")
 
             for (event in items) {
-                var start: DateTime = event.getStart().getDateTime()
-                if (start == null) {
-                    start = event.getStart().getDate()
-                }
+                val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
 
-                calendarEvents.add(CalendarEvent(event.summary, start.toStringRfc3339()))
+                val startTime: String = df.format(event.start.dateTime.value)
+                val endTime: String = df.format(event.end.dateTime.value)
 
-                System.out.printf("%s (%s)\n", event.getSummary(), start)
+                calendarEvents.add(CalendarEvent(event.summary, startTime))
+
+                System.out.printf("%s (%s)\n", event.summary, startTime)
             }
         }
         return calendarEvents;

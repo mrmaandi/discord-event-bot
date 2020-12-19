@@ -1,4 +1,4 @@
-package com.planetsf.discordsampleflipbot.calendar
+package com.planetsf.discordsampleflipbot.calendar.model
 
 
 data class CalendarEvent(

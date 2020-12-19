@@ -1,4 +1,4 @@
-package com.planetsf.discordsampleflipbot.bot.events
+package com.planetsf.discordsampleflipbot.bot.eventlistener
 
 import discord4j.core.event.domain.Event
 import org.slf4j.Logger
