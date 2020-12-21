@@ -1,3 +1,4 @@
-# Discord Sample Flip Bot
-Discord Commands
-Google Calendar Integration
+# Discord Bot
+Includes:
+* Discord Commands
+* Google Calendar Integration
