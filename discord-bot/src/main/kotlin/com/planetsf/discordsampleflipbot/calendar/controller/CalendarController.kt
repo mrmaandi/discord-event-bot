@@ -12,6 +12,6 @@ class CalendarController(private val calendarService: CalendarService) {
 
     @GetMapping("/events")
     fun events(): List<CalendarEvent> {
-        return calendarService.getCalendar()
+        return calendarService.getCalendarEvents()
     }
 }

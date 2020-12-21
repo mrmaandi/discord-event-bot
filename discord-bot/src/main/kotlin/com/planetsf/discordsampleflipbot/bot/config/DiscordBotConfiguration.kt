@@ -18,10 +18,10 @@ class DiscordBotConfiguration {
     @Value("\${discord-bot.auth-token}")
     private val token: String? = null
 
+    var client: GatewayDiscordClient? = null
+
     @Bean
     fun <T : Event> gatewayDiscordClient(eventListeners: List<EventListener<T>>): GatewayDiscordClient? {
-        var client: GatewayDiscordClient? = null
-
         try {
             client = DiscordClientBuilder.create(token!!)
                 .build()

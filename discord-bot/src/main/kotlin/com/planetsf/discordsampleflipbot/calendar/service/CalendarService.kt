@@ -22,8 +22,7 @@ import java.util.Collections.singletonList
 import java.text.SimpleDateFormat
 
 import java.text.DateFormat
-
-
+import java.util.Collections.emptyList
 
 
 @Service
@@ -34,14 +33,33 @@ class CalendarService {
     private val SCOPES = singletonList(CalendarScopes.CALENDAR_READONLY)
     private val CREDENTIALS_FILE_PATH = "/credentials.json"
 
-    fun getCalendar(): List<CalendarEvent> {
-        val calendarEvents = mutableListOf<CalendarEvent>()
+    fun getNextCalendarEvent(): CalendarEvent? {
+        val service: Calendar = getAuthorizedAPICalendarService()
+        val now = DateTime(System.currentTimeMillis())
+        val events: Events = service.events().list("2pr0jjacf8dejccjog57cjc71s@group.calendar.google.com")
+            .setMaxResults(1)
+            .setTimeMin(now)
+            .setOrderBy("startTime")
+            .setSingleEvents(true)
+            .execute()
 
-        // Build a new authorized API client service.
-        val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
-        val service: Calendar = Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-            .setApplicationName(APPLICATION_NAME)
-            .build()
+        if (events.isEmpty()) {
+            return null
+        }
+
+        val event = events.items[0]
+
+        return CalendarEvent(
+            id = event.id,
+            name = event.summary,
+            start = event.start.dateTime.value,
+            end = event.end.dateTime.value
+        )
+    }
+
+    fun getCalendarEvents(): List<CalendarEvent> {
+        val calendarEvents = mutableListOf<CalendarEvent>()
+        val service: Calendar = getAuthorizedAPICalendarService()
 
         // List the next 10 events
         val now = DateTime(System.currentTimeMillis())
@@ -59,16 +77,30 @@ class CalendarService {
 
             for (event in items) {
                 val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
-
                 val startTime: String = df.format(event.start.dateTime.value)
                 val endTime: String = df.format(event.end.dateTime.value)
 
-                calendarEvents.add(CalendarEvent(event.summary, startTime))
+                calendarEvents.add(
+                    CalendarEvent(
+                        id = event.id,
+                        name = event.summary,
+                        start = event.start.dateTime.value,
+                        end = event.end.dateTime.value
+                    )
+                )
 
                 System.out.printf("%s (%s)\n", event.summary, startTime)
             }
         }
         return calendarEvents;
+    }
+
+    private fun getAuthorizedAPICalendarService(): Calendar {
+        val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
+        val service: Calendar = Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+            .setApplicationName(APPLICATION_NAME)
+            .build()
+        return service
     }
 
     private fun getCredentials(HTTP_TRANSPORT: NetHttpTransport): Credential? {
