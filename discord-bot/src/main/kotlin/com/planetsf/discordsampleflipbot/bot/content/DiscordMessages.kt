@@ -37,7 +37,7 @@ class DiscordMessages {
                     false
                 )
                 .addField(
-                    "\uD83C\uDF9F  Submittions",
+                    "\uD83C\uDF9F  Submissions",
                     "Submission have to be uploaded to this Discord channel. The submissions will be listened to in their upload order.",
                     false
                 )

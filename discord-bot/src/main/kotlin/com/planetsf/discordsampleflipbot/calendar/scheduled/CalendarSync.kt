@@ -94,7 +94,7 @@ class CalendarSync(private val calendarService: CalendarService) {
 
     private fun getDiscordTextChannel(): TextChannel = gatewayDiscordClient!!.client!!
         .guilds
-        .filter { guild -> guild.name == "\uD83C\uDF0C Planet SF" }
+        .filter { guild -> guild.name == "Clubhouse" }
         .blockFirst()
         ?.channels
         ?.filter { channel -> channel.name == "bot-testing" }?.blockFirst() as TextChannel

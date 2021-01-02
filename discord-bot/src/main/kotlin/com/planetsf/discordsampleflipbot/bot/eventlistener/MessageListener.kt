@@ -8,6 +8,8 @@ import discord4j.rest.util.Color
 import reactor.core.publisher.Mono
 
 import org.springframework.beans.factory.annotation.Autowired
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 
 
 abstract class MessageListener {
@@ -35,6 +37,7 @@ abstract class MessageListener {
         val TITLE = "Sample Flip Challenge Next Events"
         val IMG = "https://cdn.discordapp.com/icons/685851452228370501/a_9e5dd2406c01f09bf9226196b3b0e7c2.webp?size=128"
         val IMG2 = "https://i.imgur.com/iqKU9ty.png"
+        val dateFormat: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
 
         val eventsResponse: MutableList<CalendarEvent>? = webClientTemplate!!.webClient()
             .get()
@@ -59,7 +62,7 @@ abstract class MessageListener {
 
                     if (eventsResponse != null) {
                         for (event in eventsResponse) {
-                            spec.addField(event.name, event.time, true)
+                            spec.addField(event.name, dateFormat.format(event.start.toLong()), true)
                         }
                     }
                 }

@@ -6,4 +6,5 @@ data class CalendarEvent(
     val name: String,
     val start: Long,
     val end: Long,
+    val description: List<CalendarEventJson.EventSubmission>?,
 )

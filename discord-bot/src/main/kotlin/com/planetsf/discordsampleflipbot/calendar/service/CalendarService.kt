@@ -15,19 +15,22 @@ import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.calendar.model.Event
 import com.google.api.services.calendar.model.Events
+import com.google.gson.Gson
+import com.planetsf.discordsampleflipbot.calendar.helper.CALENDAR_ID
+import com.planetsf.discordsampleflipbot.calendar.helper.EVENT_LENGTH
 import com.planetsf.discordsampleflipbot.calendar.model.CalendarEvent
+import com.planetsf.discordsampleflipbot.calendar.model.CalendarEventJson
 import org.springframework.stereotype.Service
 import java.io.*
 import java.util.Collections.singletonList
 import java.text.SimpleDateFormat
 
 import java.text.DateFormat
-import java.util.Collections.emptyList
 
 
 @Service
 class CalendarService {
-    private val APPLICATION_NAME = "Google Calendar API Java Quickstart"
+    private val APPLICATION_NAME = "Google Calendar API"
     private val JSON_FACTORY: JsonFactory = JacksonFactory.getDefaultInstance()
     private val TOKENS_DIRECTORY_PATH = "tokens"
     private val SCOPES = singletonList(CalendarScopes.CALENDAR_READONLY)
@@ -35,8 +38,8 @@ class CalendarService {
 
     fun getNextCalendarEvent(): CalendarEvent? {
         val service: Calendar = getAuthorizedAPICalendarService()
-        val now = DateTime(System.currentTimeMillis())
-        val events: Events = service.events().list("2pr0jjacf8dejccjog57cjc71s@group.calendar.google.com")
+        val now = DateTime(System.currentTimeMillis() - EVENT_LENGTH)
+        val events: Events = service.events().list(CALENDAR_ID)
             .setMaxResults(1)
             .setTimeMin(now)
             .setOrderBy("startTime")
@@ -53,7 +56,8 @@ class CalendarService {
             id = event.id,
             name = event.summary,
             start = event.start.dateTime.value,
-            end = event.end.dateTime.value
+            end = event.end.dateTime.value,
+            description = null
         )
     }
 
@@ -62,8 +66,8 @@ class CalendarService {
         val service: Calendar = getAuthorizedAPICalendarService()
 
         // List the next 10 events
-        val now = DateTime(System.currentTimeMillis())
-        val events: Events = service.events().list("2pr0jjacf8dejccjog57cjc71s@group.calendar.google.com")
+        val now = DateTime(System.currentTimeMillis() - EVENT_LENGTH)
+        val events: Events = service.events().list(CALENDAR_ID)
             .setMaxResults(10)
             .setTimeMin(now)
             .setOrderBy("startTime")
@@ -78,14 +82,57 @@ class CalendarService {
             for (event in items) {
                 val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
                 val startTime: String = df.format(event.start.dateTime.value)
-                val endTime: String = df.format(event.end.dateTime.value)
 
                 calendarEvents.add(
                     CalendarEvent(
                         id = event.id,
                         name = event.summary,
                         start = event.start.dateTime.value,
-                        end = event.end.dateTime.value
+                        end = event.end.dateTime.value,
+                        description = null
+                    )
+                )
+
+                System.out.printf("%s (%s)\n", event.summary, startTime)
+            }
+        }
+        return calendarEvents;
+    }
+
+    fun getPreviousEvents(): List<CalendarEvent> {
+        val calendarEvents = mutableListOf<CalendarEvent>()
+        val service: Calendar = getAuthorizedAPICalendarService()
+
+        // List the next 10 events
+        val now = DateTime(System.currentTimeMillis() - EVENT_LENGTH)
+        val events: Events = service.events().list(CALENDAR_ID)
+            .setMaxResults(10)
+            .setTimeMax(now)
+            .setOrderBy("startTime")
+            .setSingleEvents(true)
+            .execute()
+        val items: List<Event> = events.items
+        if (items.isEmpty()) {
+            println("No upcoming events found.")
+        } else {
+            println("Upcoming events")
+
+            for (event in items) {
+                val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+                val startTime: String = df.format(event.start.dateTime.value)
+
+                val parsedDescription = event.description.replace("\n", "")
+                val gson = Gson()
+                val eventSubmissions: List<CalendarEventJson.EventSubmission> =
+                    gson.fromJson(parsedDescription, Array<CalendarEventJson.EventSubmission>::class.java).toList()
+
+                calendarEvents.add(
+                    CalendarEvent(
+                        id = event.id,
+                        name = event.summary,
+                        start = event.start.dateTime.value,
+                        end = event.end.dateTime.value,
+                        description = eventSubmissions
                     )
                 )
 
@@ -105,9 +152,9 @@ class CalendarService {
 
     private fun getCredentials(HTTP_TRANSPORT: NetHttpTransport): Credential? {
         // Load client secrets.
-        val `in`: InputStream = Calendar::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
+        val credentials: InputStream = Calendar::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
             ?: throw FileNotFoundException("Resource not found: $CREDENTIALS_FILE_PATH")
-        val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(`in`))
+        val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(credentials))
 
         // Build flow and trigger user authorization request.
         val flow = GoogleAuthorizationCodeFlow.Builder(
