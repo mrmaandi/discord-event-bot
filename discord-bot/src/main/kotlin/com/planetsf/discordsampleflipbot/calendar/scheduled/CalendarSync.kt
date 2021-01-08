@@ -25,12 +25,15 @@ class CalendarSync(private val calendarService: CalendarService) {
 
     @Scheduled(fixedRate = 5000)
     fun syncCalendarEvents() {
-        val nextEvent: CalendarEvent? = calendarService.getNextCalendarEvent()
+        val nextEvents: List<CalendarEvent> = calendarService.getNextCalendarEvent()
         val activeEvent: CalendarEvent? = CurrentEventHolder.currentEvent
 
-        if (nextEvent == null) {
-            endActiveEvent(nextEvent)
+        if (nextEvents.isEmpty()) {
+            /*needs to be worked on*/
+            /*endActiveEvent(nextEvent)*/
         } else {
+            val nextEvent: CalendarEvent = nextEvents[0]
+
             if (isNextCalendarEventNow(nextEvent)) {
                 endActiveEvent(nextEvent)
 

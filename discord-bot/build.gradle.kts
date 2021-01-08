@@ -31,7 +31,7 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
 	implementation("com.google.code.gson:gson:2.8.2")
 	compileOnly("org.projectlombok:lombok")
-	implementation("com.google.api-client:google-api-client:1.23.0")
+	implementation("com.google.api-client:google-api-client:1.31.1")
 	implementation("com.google.oauth-client:google-oauth-client-jetty:1.23.0")
 	implementation("com.google.apis:google-api-services-calendar:v3-rev305-1.23.0")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")

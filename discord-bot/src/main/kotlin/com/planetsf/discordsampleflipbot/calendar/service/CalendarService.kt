@@ -1,18 +1,11 @@
 package com.planetsf.discordsampleflipbot.calendar.service
 
-import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.DateTime
-import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.Calendar
-import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.calendar.model.Event
 import com.google.api.services.calendar.model.Events
 import com.google.gson.Gson
@@ -22,21 +15,19 @@ import com.planetsf.discordsampleflipbot.calendar.model.CalendarEvent
 import com.planetsf.discordsampleflipbot.calendar.model.CalendarEventJson
 import org.springframework.stereotype.Service
 import java.io.*
-import java.util.Collections.singletonList
-import java.text.SimpleDateFormat
-
 import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.Collections.singletonList
 
 
 @Service
 class CalendarService {
-    private val APPLICATION_NAME = "Google Calendar API"
+    private val APPLICATION_NAME = "PlanetSF"
     private val JSON_FACTORY: JsonFactory = JacksonFactory.getDefaultInstance()
-    private val TOKENS_DIRECTORY_PATH = "tokens"
-    private val SCOPES = singletonList(CalendarScopes.CALENDAR_READONLY)
-    private val CREDENTIALS_FILE_PATH = "/credentials.json"
+    private val SERVICE_ACCOUNT_PK = "/planetsf-1608298242226-fbd01403de09.p12"
 
-    fun getNextCalendarEvent(): CalendarEvent? {
+    fun getNextCalendarEvent(): List<CalendarEvent> {
         val service: Calendar = getAuthorizedAPICalendarService()
         val now = DateTime(System.currentTimeMillis() - EVENT_LENGTH)
         val events: Events = service.events().list(CALENDAR_ID)
@@ -46,19 +37,19 @@ class CalendarService {
             .setSingleEvents(true)
             .execute()
 
-        if (events.isEmpty()) {
-            return null
+        if (events.items.isEmpty()) {
+            return emptyList()
         }
 
         val event = events.items[0]
 
-        return CalendarEvent(
+        return singletonList(CalendarEvent(
             id = event.id,
             name = event.summary,
             start = event.start.dateTime.value,
             end = event.end.dateTime.value,
             description = null
-        )
+        ))
     }
 
     fun getCalendarEvents(): List<CalendarEvent> {
@@ -113,18 +104,11 @@ class CalendarService {
             .execute()
         val items: List<Event> = events.items
         if (items.isEmpty()) {
-            println("No upcoming events found.")
+            println("No previous events found.")
         } else {
-            println("Upcoming events")
-
             for (event in items) {
                 val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
                 val startTime: String = df.format(event.start.dateTime.value)
-
-                val parsedDescription = event.description.replace("\n", "")
-                val gson = Gson()
-                val eventSubmissions: List<CalendarEventJson.EventSubmission> =
-                    gson.fromJson(parsedDescription, Array<CalendarEventJson.EventSubmission>::class.java).toList()
 
                 calendarEvents.add(
                     CalendarEvent(
@@ -132,7 +116,7 @@ class CalendarService {
                         name = event.summary,
                         start = event.start.dateTime.value,
                         end = event.end.dateTime.value,
-                        description = eventSubmissions
+                        description = getEventDescription(event)
                     )
                 )
 
@@ -142,29 +126,27 @@ class CalendarService {
         return calendarEvents;
     }
 
+    private fun getEventDescription(event: Event): List<CalendarEventJson.EventSubmission> {
+        val gson = Gson()
+        if (event.description != null) {
+            return gson.fromJson(event.description, Array<CalendarEventJson.EventSubmission>::class.java).toList()
+        }
+        return emptyList();
+    }
+
     private fun getAuthorizedAPICalendarService(): Calendar {
+        val key: InputStream = CalendarService::class.java.getResourceAsStream(SERVICE_ACCOUNT_PK)
+
+        val credentials = GoogleCredential.Builder().setTransport(GoogleNetHttpTransport.newTrustedTransport())
+            .setJsonFactory(JSON_FACTORY)
+            .setServiceAccountId("clubhouse@planetsf-1608298242226.iam.gserviceaccount.com")
+            .setServiceAccountScopes(listOf("https://www.googleapis.com/auth/calendar.readonly"))
+            .setServiceAccountPrivateKeyFromP12File(key)
+            .build()
         val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
-        val service: Calendar = Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+        val service: Calendar = Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, credentials)
             .setApplicationName(APPLICATION_NAME)
             .build()
         return service
     }
-
-    private fun getCredentials(HTTP_TRANSPORT: NetHttpTransport): Credential? {
-        // Load client secrets.
-        val credentials: InputStream = Calendar::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
-            ?: throw FileNotFoundException("Resource not found: $CREDENTIALS_FILE_PATH")
-        val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(credentials))
-
-        // Build flow and trigger user authorization request.
-        val flow = GoogleAuthorizationCodeFlow.Builder(
-            HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES
-        )
-            .setDataStoreFactory(FileDataStoreFactory(File(TOKENS_DIRECTORY_PATH)))
-            .setAccessType("offline")
-            .build()
-        val receiver = LocalServerReceiver.Builder().setPort(8888).build()
-        return AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
-    }
-
 }
