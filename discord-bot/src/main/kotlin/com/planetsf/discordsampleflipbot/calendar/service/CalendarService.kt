@@ -94,10 +94,9 @@ class CalendarService {
         val calendarEvents = mutableListOf<CalendarEvent>()
         val service: Calendar = getAuthorizedAPICalendarService()
 
-        // List the next 10 events
+        // List the next events
         val now = DateTime(System.currentTimeMillis() - EVENT_LENGTH)
         val events: Events = service.events().list(CALENDAR_ID)
-            .setMaxResults(10)
             .setTimeMax(now)
             .setOrderBy("startTime")
             .setSingleEvents(true)
