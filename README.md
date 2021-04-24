@@ -1,3 +1,5 @@
+Discontinued
+
 # Discord Bot with Google Calendar integration
 
 ![Discord Bot](https://repository-images.githubusercontent.com/322328195/bd08c780-4907-11eb-9ec7-b37fa7ff0469)
